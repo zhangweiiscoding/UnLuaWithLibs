@@ -283,7 +283,7 @@ void FLuaContext::CreateState()
 			UE_LOG(LogUnLua, Log, TEXT("Lua state setup with LuaLpeg."));
 		}
 
-		//lualpeg
+		//luasproto
 		if (FLibSprotoModule::IsAvailable())
 		{
 			FLibSprotoModule::Get().SetupLibSproto(L);
@@ -291,10 +291,6 @@ void FLuaContext::CreateState()
 			lua_setglobal(L, "SupportSproto");
 
 			UE_LOG(LogUnLua, Log, TEXT("Lua state setup with Sproto."));
-		}
-		else
-		{
-			UE_LOG(LogUnLua, Log, TEXT("FUCKKKKKK"));
 		}
 		
         FUnLuaDelegates::OnLuaStateCreated.Broadcast(L);
