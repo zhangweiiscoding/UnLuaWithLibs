@@ -56,7 +56,8 @@ public class UnLua : ModuleRules
                 "LibLuasocket",
                 "LibLuacrypt",
                 "LibLpeg",
-                "LibSproto"
+                "LibSproto",
+                "LibCjson"
             }
             );
         

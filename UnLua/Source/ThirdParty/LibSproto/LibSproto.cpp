@@ -26,7 +26,6 @@ void FLibSprotoModule::SetupLibSproto(lua_State* L)
 {
 	luaL_getsubtable(L, LUA_REGISTRYINDEX, LUA_PRELOAD_TABLE);
 		 
-	lua_pushcfunction(L, luaopen_sproto_core);
-	lua_setfield(L, -2, "sproto.core");
+	luaL_requiref(L, "sproto.core", luaopen_sproto_core, 1);
 }
 

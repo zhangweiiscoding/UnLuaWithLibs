@@ -29,8 +29,7 @@ void FLibLpegModule::ShutdownModule()
 void FLibLpegModule::SetupLibLpeg(lua_State* L)
 {
 	luaL_getsubtable(L, LUA_REGISTRYINDEX, LUA_PRELOAD_TABLE);
-		 
-	lua_pushcfunction(L, luaopen_lpeg);
-	lua_setfield(L, -2, "lpeg");
+
+	luaL_requiref(L, "lpeg", luaopen_lpeg, 1);
 }
 

@@ -25,7 +25,6 @@ void FLibLuacryptModule::SetupLuacrypt(lua_State* L)
 {
 	luaL_getsubtable(L, LUA_REGISTRYINDEX, LUA_PRELOAD_TABLE);
 		 
-	lua_pushcfunction(L, luaopen_crypt);
-	lua_setfield(L, -2, "crypt");
+	luaL_requiref(L, "crypt", luaopen_crypt, 1);
 }
 

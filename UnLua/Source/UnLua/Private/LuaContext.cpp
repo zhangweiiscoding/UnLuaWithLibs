@@ -21,11 +21,11 @@
 #include "UnLuaDelegates.h"
 #include "UnLuaDebugBase.h"
 #include "UEObjectReferencer.h"
-#include "UEReflectionUtils.h"
 #include "CollisionHelper.h"
 #include "DelegateHelper.h"
-#include "PropertyCreator.h"
+#include "ReflectionUtils/PropertyCreator.h"
 #include "DefaultParamCollection.h"
+#include "ReflectionUtils/ReflectionRegistry.h"
 #include "Interfaces/IPluginManager.h"
 
 //3rd party include
@@ -33,10 +33,10 @@
 #include "ThirdParty/LibLuacrypt/LibLuacrypt.h"
 #include "ThirdParty/LibLpeg/LibLpeg.h"
 #include "ThirdParty/LibSproto/LibSproto.h"
-
-
+#include "ThirdParty/LibCjson/LibCjson.h"
 #if WITH_EDITOR
 #include "Editor.h"
+#include "GameDelegates.h"
 #endif
 
 #if UE_BUILD_TEST
@@ -129,6 +129,7 @@ void FLuaContext::RegisterDelegates()
     FEditorDelegates::PostPIEStarted.AddRaw(GLuaCxt, &FLuaContext::PostPIEStarted);
     FEditorDelegates::PrePIEEnded.AddRaw(GLuaCxt, &FLuaContext::PrePIEEnded);
     FEditorDelegates::EndPIE.AddRaw(GLuaCxt, &FLuaContext::EndPIE);
+    FGameDelegates::Get().GetEndPlayMapDelegate().AddRaw(GLuaCxt, &FLuaContext::OnEndPlayMap);
 #endif
 }
 
@@ -292,7 +293,17 @@ void FLuaContext::CreateState()
 
 			UE_LOG(LogUnLua, Log, TEXT("Lua state setup with Sproto."));
 		}
-		
+
+		if (FLibCjsonModule::IsAvailable())
+		{
+			FLibCjsonModule::Get().SetupLibCjson(L);
+			lua_pushboolean(L, true);
+			lua_setglobal(L, "SupportLuaCjson");
+
+			UE_LOG(LogUnLua, Log, TEXT("Lua state setup with lua-cjson."));
+		}
+
+
         FUnLuaDelegates::OnLuaStateCreated.Broadcast(L);
     }
 }
@@ -443,6 +454,16 @@ bool FLuaContext::TryToBindLua(UObjectBaseUtility *Object)
         }
         if (Class->ImplementsInterface(InterfaceClass))                             // static binding
         {
+#if WITH_EDITOR
+            if (GIsEditor && Object->GetOuter())
+            {
+                UWorld *World = Object->GetOuter()->GetWorld();
+                if (World && !World->IsGameWorld())
+                {
+                    return false;
+                }
+            }
+#endif
             UFunction *Func = Class->FindFunctionByName(FName("GetModuleName"));    // find UFunction 'GetModuleName'. hard coded!!!
             if (Func)
             {
@@ -481,7 +502,7 @@ bool FLuaContext::TryToBindLua(UObjectBaseUtility *Object)
 /**
  * Callback for FWorldDelegates::OnWorldTickStart
  */
-#if ENGINE_MINOR_VERSION > 23	
+#if ENGINE_MINOR_VERSION > 23
 void FLuaContext::OnWorldTickStart(UWorld *World, ELevelTick TickType, float DeltaTime)
 #else
 void FLuaContext::OnWorldTickStart(ELevelTick TickType, float DeltaTime)
@@ -517,15 +538,23 @@ void FLuaContext::OnWorldCleanup(UWorld *World, bool bSessionEnded, bool bCleanu
         return;
     }
 
+#if WITH_EDITOR
+    UGameInstance *OwningGameInstance = World->GetGameInstance();
+    if (OwningGameInstance && OwningGameInstance->GetWorldContext() && OwningGameInstance->GetWorldContext()->PendingNetGame)
+    {
+        return;
+    }
+#endif
+
     World->RemoveOnActorSpawnedHandler(OnActorSpawnedHandle);
 
     if (World->PersistentLevel && World->PersistentLevel->OwningWorld == World)
     {
         bIsInSeamlessTravel = World->IsInSeamlessTravel();
     }
-#if ENGINE_MINOR_VERSION > 23	
-    Cleanup(IsEngineExitRequested(), World);                    // clean up	
-#else	
+#if ENGINE_MINOR_VERSION > 23
+    Cleanup(IsEngineExitRequested(), World);                    // clean up
+#else
     Cleanup(GIsRequestingExit, World);                          // clean up
 #endif
 
@@ -547,6 +576,14 @@ void FLuaContext::OnPostWorldCleanup(UWorld *World, bool bSessionEnded, bool bCl
     {
         return;
     }
+
+#if WITH_EDITOR
+    UGameInstance *OwningGameInstance = World->GetGameInstance();
+    if (OwningGameInstance && OwningGameInstance->GetWorldContext() && OwningGameInstance->GetWorldContext()->PendingNetGame)
+    {
+        return;
+    }
+#endif
 
     if (NextMap.Len() > 0)
     {
@@ -827,13 +864,7 @@ void FLuaContext::PostPIEStarted(bool bIsSimulating)
  */
 void FLuaContext::PrePIEEnded(bool bIsSimulating)
 {
-    bIsPIE = false;
-    Cleanup(true);
-    Manager->CleanupDefaultInputs();
-    ServerWorld = nullptr;
-    LoadedWorlds.Empty();
-    CandidateInputComponents.Empty();
-    FWorldDelegates::OnWorldTickStart.Remove(OnWorldTickStartHandle);
+    //bIsPIE = false;
 }
 
 /**
@@ -841,6 +872,20 @@ void FLuaContext::PrePIEEnded(bool bIsSimulating)
  */
 void FLuaContext::EndPIE(bool bIsSimulating)
 {
+}
+
+/**
+ * Callback for FGameDelegates::EndPlayMapDelegate
+ */
+void FLuaContext::OnEndPlayMap()
+{
+    bIsPIE = false;
+    Cleanup(true);
+    Manager->CleanupDefaultInputs();
+    ServerWorld = nullptr;
+    LoadedWorlds.Empty();
+    CandidateInputComponents.Empty();
+    FWorldDelegates::OnWorldTickStart.Remove(OnWorldTickStartHandle);
 }
 #endif
 
@@ -936,8 +981,8 @@ void FLuaContext::NotifyUObjectDeleted(const UObjectBase *InObject, int32 Index)
         return;
     }
 
-    bool bUClass = GReflectionRegistry.NotifyUObjectDeleted(InObject);
-    Manager->NotifyUObjectDeleted(InObject, bUClass);
+    bool bClass = GReflectionRegistry.NotifyUObjectDeleted(InObject);
+    Manager->NotifyUObjectDeleted(InObject, bClass);
 
     if (CandidateInputComponents.Num() > 0)
     {
@@ -1048,7 +1093,7 @@ void FLuaContext::Initialize()
  */
 void FLuaContext::Cleanup(bool bFullCleanup, UWorld *World)
 {
-    if (!bEnable || !bInitialized || !Manager)
+    if (!bEnable || !Manager)
     {
         return;
     }

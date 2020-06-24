@@ -16,7 +16,7 @@
 
 #include "UnLuaBase.h"
 #include "UnLuaTemplate.h"
-#include "lua.hpp"
+#include "ThirdParty/Lua/include/lua.hpp"
 
 namespace UnLua
 {

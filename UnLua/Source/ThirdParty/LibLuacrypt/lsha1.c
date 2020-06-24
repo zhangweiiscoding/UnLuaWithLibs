@@ -263,11 +263,11 @@ lsha1(lua_State *L) {
 #define BLOCKSIZE 64
 
 static inline void
-xor_key(uint8_t key[BLOCKSIZE], uint32_t xor) {
+cxor_key(uint8_t key[BLOCKSIZE], uint32_t cxor) {
 	int i;
 	for (i=0;i<BLOCKSIZE;i+=sizeof(uint32_t)) {
 		uint32_t * k = (uint32_t *)&key[i];
-		*k ^= xor;
+		*k ^= cxor;
 	}
 }
 
@@ -293,11 +293,11 @@ lhmac_sha1(lua_State *L) {
 		memcpy(rkey, key, key_sz);
 	}
 
-	xor_key(rkey, 0x5c5c5c5c);
+	cxor_key(rkey, 0x5c5c5c5c);
 	sat_SHA1_Init(&ctx1);
 	sat_SHA1_Update(&ctx1, rkey, BLOCKSIZE);
 
-	xor_key(rkey, 0x5c5c5c5c ^ 0x36363636);
+	cxor_key(rkey, 0x5c5c5c5c ^ 0x36363636);
 	sat_SHA1_Init(&ctx2);
 	sat_SHA1_Update(&ctx2, rkey, BLOCKSIZE);
 	sat_SHA1_Update(&ctx2, text, text_sz);

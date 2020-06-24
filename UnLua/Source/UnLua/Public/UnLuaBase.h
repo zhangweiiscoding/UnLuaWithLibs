@@ -14,8 +14,8 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "CoreUObject.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 #ifndef AUTO_UNLUA_STARTUP
 #define AUTO_UNLUA_STARTUP 0
@@ -30,6 +30,10 @@
 #endif
 
 UNLUA_API DECLARE_LOG_CATEGORY_EXTERN(LogUnLua, Log, All);
+
+#if ENGINE_MINOR_VERSION < 25
+typedef UProperty FProperty;
+#endif
 
 struct lua_State;
 struct luaL_Reg;
@@ -51,6 +55,8 @@ namespace UnLua
      */
     struct ITypeInterface : public ITypeOps
     {
+        virtual ~ITypeInterface() {}
+
         virtual bool IsPODType() const = 0;
         virtual bool IsTriviallyDestructible() const = 0;
         virtual int32 GetSize() const = 0;
@@ -62,7 +68,7 @@ namespace UnLua
         virtual void Copy(void *Dest, const void *Src) const = 0;
         virtual bool Identical(const void *A, const void *B) const = 0;
         virtual FString GetName() const = 0;
-        virtual UProperty* GetUProperty() const = 0;
+        virtual FProperty* GetUProperty() const = 0;
     };
 
     /**

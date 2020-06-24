@@ -21,6 +21,10 @@ BlueLua: https://github.com/jashking/Bluelua
 
 skynet的定制协议
 
+## Lua-Cjson
+
+可以对json进行encode和decode
+
 ## 如何使用
 
 直接将Unlua文件夹拷贝到plugin目录下，重新编译你的工程</br>
@@ -51,5 +55,5 @@ skynet的定制协议
 
 ## 注意
 
-* 目前只支持win64 debug，其他环境未测试，后续会陆续更新多平台的支持
+* 目前已添加多平台的支持
 * 这几个库的使用请查阅相关文档

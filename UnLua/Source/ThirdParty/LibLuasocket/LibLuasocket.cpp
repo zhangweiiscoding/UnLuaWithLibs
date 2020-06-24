@@ -25,42 +25,19 @@ void FLibLuasocketModule::SetupLuasocket(struct lua_State* L)
 {
 	luaL_getsubtable(L, LUA_REGISTRYINDEX, LUA_PRELOAD_TABLE);
 
-	lua_pushcfunction(L, luaopen_socket_core);
-	lua_setfield(L, -2, "socket.core");
+	luaL_requiref(L, "socket.core", luaopen_socket_core, 1);
+	luaL_requiref(L, "mime.core", luaopen_mime_core, 1);
+	luaL_requiref(L, "socket", &FLibLuasocketModule::OpenLuaSocketSocket, 1);
+	luaL_requiref(L, "ltn12", &FLibLuasocketModule::OpenLuaSocketLtn12, 1);
+	luaL_requiref(L, "mime", &FLibLuasocketModule::OpenLuaSocketMime, 1);
 
-	lua_pushcfunction(L, luaopen_mime_core);
-	lua_setfield(L, -2, "mime.core");
-
-	lua_pushcfunction(L, &FLibLuasocketModule::OpenLuaSocketFtp);
-	lua_setfield(L, -2, "socket.ftp");
-
-	lua_pushcfunction(L, &FLibLuasocketModule::OpenLuaSocketHeaders);
-	lua_setfield(L, -2, "socket.headers");
-
-	lua_pushcfunction(L, &FLibLuasocketModule::OpenLuaSocketHttp);
-	lua_setfield(L, -2, "socket.http");
-
-	lua_pushcfunction(L, &FLibLuasocketModule::OpenLuaSocketLtn12);
-	lua_setfield(L, -2, "ltn12");
-
-	lua_pushcfunction(L, &FLibLuasocketModule::OpenLuaSocketMbox);
-	lua_setfield(L, -2, "mbox");
-
-	lua_pushcfunction(L, &FLibLuasocketModule::OpenLuaSocketMime);
-	lua_setfield(L, -2, "mime");
-
-	lua_pushcfunction(L, &FLibLuasocketModule::OpenLuaSocketSmtp);
-	lua_setfield(L, -2, "socket.smtp");
-
-	lua_pushcfunction(L, &FLibLuasocketModule::OpenLuaSocketSocket);
-	lua_setfield(L, -2, "socket");
-
-	lua_pushcfunction(L, &FLibLuasocketModule::OpenLuaSocketTp);
-	lua_setfield(L, -2, "socket.tp");
-
-	lua_pushcfunction(L, &FLibLuasocketModule::OpenLuaSocketUrl);
-	lua_setfield(L, -2, "socket.url");
-
+	luaL_requiref(L, "socket.url", &FLibLuasocketModule::OpenLuaSocketUrl, 1);
+	luaL_requiref(L, "socket.tp", &FLibLuasocketModule::OpenLuaSocketTp, 1);
+	luaL_requiref(L, "socket.ftp", &FLibLuasocketModule::OpenLuaSocketFtp, 1);
+	luaL_requiref(L, "socket.headers", &FLibLuasocketModule::OpenLuaSocketHeaders, 1);
+	luaL_requiref(L, "socket.http", &FLibLuasocketModule::OpenLuaSocketHttp, 1);
+	luaL_requiref(L, "mbox", &FLibLuasocketModule::OpenLuaSocketMbox, 1);
+	luaL_requiref(L, "socket.smtp", &FLibLuasocketModule::OpenLuaSocketSmtp, 1);
 	lua_pop(L, 1);
 }
 

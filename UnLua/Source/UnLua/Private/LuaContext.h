@@ -45,7 +45,7 @@ public:
     void AddLibraryName(const TCHAR *LibraryName) { LibraryNames.Add(LibraryName); }
     void AddModuleName(const TCHAR *ModuleName) { ModuleNames.AddUnique(ModuleName); }
 
-#if ENGINE_MINOR_VERSION > 23	
+#if ENGINE_MINOR_VERSION > 23
     void OnWorldTickStart(UWorld *World, ELevelTick TickType, float DeltaTime);
 #else
     void OnWorldTickStart(ELevelTick TickType, float DeltaTime);
@@ -68,6 +68,8 @@ public:
     void PostPIEStarted(bool bIsSimulating);
     void PrePIEEnded(bool bIsSimulating);
     void EndPIE(bool bIsSimulating);
+
+    void OnEndPlayMap();
 
     const TMap<FName, UnLua::IExportedClass*>& GetExportedReflectedClasses() const { return ExportedReflectedClasses; }
     const TMap<FName, UnLua::IExportedClass*>& GetExportedNonReflectedClasses() const { return ExportedNonReflectedClasses; }
